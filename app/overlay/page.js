@@ -9,7 +9,7 @@ const DEFAULT_REFRESH_MS = 18000;
 function OverlayContent() {
   const searchParams = useSearchParams();
   const riotId = searchParams.get('riotId');
-  const platform = searchParams.get('platform') || 'euw1';
+  const platform = searchParams.get('platform') || 'euw';
   const forceMock = searchParams.get('mock') === '1';
 
   const refreshSeconds = Number(searchParams.get('refresh'));

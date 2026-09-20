@@ -259,6 +259,10 @@ a {
   height: 40px;
 }
 
+.profile-icon-placeholder {
+  background: linear-gradient(160deg, var(--hex-bg-panel), var(--hex-bg-void));
+}
+
 .player-identity {
   display: flex;
   flex-direction: column;

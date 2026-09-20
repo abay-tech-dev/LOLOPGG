@@ -4,7 +4,7 @@
 // et l'overlay OBS (format compact, fond transparent). Ne fait aucun appel
 // réseau : reçoit les stats déjà résolues en props.
 
-import { getChampionSplashUrl } from '@/lib/riot';
+import { getChampionSplashUrl } from '@/lib/ddragon';
 
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
@@ -32,7 +32,11 @@ export default function PlayerStatsCard({ stats, compact = false }) {
       )}
 
       <div className="player-header">
-        <img className="profile-icon" src={stats.profileIconUrl} alt="Icône de profil" />
+        {stats.profileIconUrl ? (
+          <img className="profile-icon" src={stats.profileIconUrl} alt="Icône de profil" />
+        ) : (
+          <div className="profile-icon profile-icon-placeholder" aria-hidden="true" />
+        )}
         <div className="player-identity">
           <p className="player-name">{stats.riotId}</p>
           <span className="player-level">Niveau {stats.summonerLevel}</span>

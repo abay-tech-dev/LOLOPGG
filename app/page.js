@@ -3,17 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PlayerStatsCard from './components/PlayerStatsCard';
 
+// Régions OP.GG (distinctes des "routing values" de l'API Riot).
 const PLATFORMS = [
-  { value: 'euw1', label: 'Europe de l\'Ouest (EUW)' },
-  { value: 'eun1', label: 'Europe Nordique & Est (EUNE)' },
-  { value: 'na1', label: 'Amérique du Nord (NA)' },
+  { value: 'euw', label: 'Europe de l\'Ouest (EUW)' },
+  { value: 'eune', label: 'Europe Nordique & Est (EUNE)' },
+  { value: 'na', label: 'Amérique du Nord (NA)' },
   { value: 'kr', label: 'Corée (KR)' },
-  { value: 'jp1', label: 'Japon (JP)' },
-  { value: 'br1', label: 'Brésil (BR)' },
-  { value: 'la1', label: 'Amérique Latine Nord (LAN)' },
-  { value: 'la2', label: 'Amérique Latine Sud (LAS)' },
-  { value: 'oc1', label: 'Océanie (OCE)' },
-  { value: 'tr1', label: 'Turquie (TR)' },
+  { value: 'jp', label: 'Japon (JP)' },
+  { value: 'br', label: 'Brésil (BR)' },
+  { value: 'lan', label: 'Amérique Latine Nord (LAN)' },
+  { value: 'las', label: 'Amérique Latine Sud (LAS)' },
+  { value: 'oce', label: 'Océanie (OCE)' },
+  { value: 'tr', label: 'Turquie (TR)' },
   { value: 'ru', label: 'Russie (RU)' },
 ];
 
@@ -21,7 +22,7 @@ const REFRESH_MS = 18000;
 
 export default function HomePage() {
   const [riotId, setRiotId] = useState('');
-  const [platform, setPlatform] = useState('euw1');
+  const [platform, setPlatform] = useState('euw');
   const [submitted, setSubmitted] = useState(null);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);

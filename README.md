@@ -7,53 +7,64 @@ moteur de données :
 - **Dashboard** (`/`) — le streamer entre son Riot ID et voit ses stats en
   grand format, avec une direction artistique "Hextech" (fond sombre,
   dorures, police Cinzel).
-- **Overlay OBS** (`/overlay?riotId=Pseudo%23TAG&platform=euw1`) — mêmes
+- **Overlay OBS** (`/overlay?riotId=Pseudo%23TAG&platform=euw`) — mêmes
   données, présentation compacte, fond transparent, pensé pour une Browser
   Source OBS.
 
-## Source de données : uniquement l'API Riot Games
+## Source de données : fetch direct sur OP.GG
 
-Toute donnée de joueur (rang, LP, historique de matchs, profil) provient
-exclusivement de l'**API officielle Riot Games**
-(`https://developer.riotgames.com`) — jamais de scraping d'OP.GG, U.GG ou
-tout autre site tiers. Les seules sources utilisées :
+Ce projet ne passe **pas** par l'API officielle Riot Games (pas de clé,
+pas d'inscription développeur, pas de rate-limit Riot à gérer). Les stats
+sont récupérées en fetchant directement les endpoints JSON internes que le
+site **op.gg** appelle lui-même depuis le navigateur pour afficher ses
+pages (`lol-api-summoner.op.gg`). Toute la logique vit dans
+`lib/opgg.js`, appelée uniquement côté serveur
+(`app/api/stats/route.js`, `runtime = 'nodejs'`).
 
-- **API Riot Games** (`account-v1`, `summoner-v4`, `league-v4`, `match-v5`,
-  `spectator-v5`) — nécessite une clé API, appelée uniquement côté serveur.
-- **Data Dragon** (`ddragon.leagueoflegends.com`) — CDN public officiel de
-  Riot pour les assets (icônes, splash arts), sans clé.
+Les icônes de champion/profil restent servies par **Data Dragon**
+(`ddragon.leagueoflegends.com`) : c'est un CDN public d'assets, sans clé
+et sans inscription — pas l'API de jeu Riot dont on s'écarte ici.
 
-La clé API n'est **jamais exposée au client** : tous les appels Riot
-passent par la route serveur `app/api/stats/route.js` (`runtime = 'nodejs'`).
+### ⚠️ Points d'attention (à lire avant toute mise en prod)
 
-## Obtenir une clé API Riot
+- **Endpoints non documentés/officiels.** `lib/opgg.js` reverse-engineer
+  les appels que le site op.gg fait en interne. Op.gg peut en changer la
+  forme, les déplacer ou les bloquer sans préavis — il n'y a aucune
+  garantie de stabilité contractuelle, contrairement à une API publique
+  versionnée. Tout le mapping des champs JSON est centralisé dans les
+  fonctions `extract*` de `lib/opgg.js` : c'est le seul endroit à
+  corriger si op.gg change sa structure.
+- **Anti-bot / CGU.** op.gg est protégé par une protection anti-bot
+  (Cloudflare) qui peut bloquer les requêtes serveur-à-serveur (403/429),
+  surtout en cas de trafic élevé ou d'IP suspecte (typiquement les IP des
+  datacenters cloud, y compris Vercel). Les CGU d'op.gg n'autorisent pas
+  explicitement ce type d'automatisation. C'est un choix assumé pour ce
+  projet (éviter la dépendance à l'API Riot), pas une garantie de
+  conformité — à évaluer selon ton usage (perso vs commercial, volume de
+  trafic).
+- **Pas de détection "en partie".** L'API publique d'op.gg utilisée ici ne
+  propose pas d'équivalent au spectator-v5 de Riot : le badge "EN JEU" ne
+  s'affiche donc qu'en **mode démo**. À revoir si op.gg expose un jour un
+  endpoint de partie en cours exploitable, ou en ajoutant l'API Riot
+  seulement pour cette fonctionnalité ponctuelle si le besoin devient
+  important.
+- **"Aujourd'hui" = 20 dernières games.** Il n'y a pas de filtre par date
+  côté op.gg pour cet endpoint : le calcul victoires/défaites du jour se
+  fait en filtrant les 20 dernières games récupérées. Un streamer qui joue
+  plus de 20 games dans sa journée verra un compteur sous-évalué.
+- **Non testé en conditions réelles** depuis l'environnement où ce code a
+  été écrit (accès sortant vers op.gg bloqué par la politique réseau du
+  sandbox de développement). À tester en local avant tout déploiement —
+  si les champs ne correspondent pas exactement, ajuste les fonctions
+  `extract*` de `lib/opgg.js` (elles lisent déjà plusieurs noms de champs
+  possibles par précaution, mais la structure réelle peut différer).
 
-1. Créer un compte sur [developer.riotgames.com](https://developer.riotgames.com/)
-   et se connecter avec son compte Riot Games.
-2. Une **clé de développement** est générée automatiquement sur le dashboard
-   — elle expire toutes les 24h, pratique pour développer/tester.
-3. Pour un usage réel il faut ensuite demander :
-   - une clé **Personal** (projet non commercial, limites plus larges,
-     durée illimitée) ;
-   - puis une clé **Product** pour la commercialisation (nécessite de
-     soumettre l'app à la revue Riot — RSO, description du produit, etc.).
+## Mode démo (sans dépendre d'op.gg)
 
-Le code n'a **rien à changer** entre ces paliers : seule la variable
-d'environnement `RIOT_API_KEY` change de valeur.
-
-⚠️ **Contrainte de monétisation Riot** : les CGU développeur interdisent de
-facturer l'accès brut aux données de jeu ("payer pour voir ses stats"). La
-valeur payante de ce produit doit résider dans les fonctionnalités, le
-design ou l'hébergement (overlay premium, personnalisation, support), pas
-dans l'accès aux stats en tant que tel. Ce MVP ne code aucun paywall, mais
-l'architecture (pas de couplage entre "compte utilisateur" et "accès aux
-stats") est pensée pour ça.
-
-## Mode démo (sans clé API)
-
-Si `RIOT_API_KEY` est absente, ou si `?mock=1` est ajouté à l'URL, l'app
-sert des données factices réalistes (mêmes formes de données, vraies icônes
-Data Dragon). Permet de développer/présenter le produit sans clé.
+Si `?mock=1` est ajouté à l'URL, ou si la variable d'env `OPGG_MOCK=1` est
+définie, l'app sert des données factices réalistes (mêmes formes de
+données, vraies icônes Data Dragon). Permet de développer/présenter le
+produit sans solliciter op.gg.
 
 ```bash
 npm run dev
@@ -66,15 +77,17 @@ npm run dev
 
 ```bash
 npm install
-cp .env.example .env.local   # puis renseigner RIOT_API_KEY
 npm run dev
 ```
 
 - `http://localhost:3000/` — dashboard.
-- `http://localhost:3000/overlay?riotId=Pseudo%23TAG&platform=euw1` —
+- `http://localhost:3000/overlay?riotId=Pseudo%23TAG&platform=euw` —
   overlay (fond transparent), à ajouter comme Browser Source dans OBS.
   Paramètre optionnel `refresh` (en secondes) pour changer la fréquence de
   rafraîchissement (par défaut 18s).
+
+Régions supportées (paramètre `platform`) : `euw`, `eune`, `na`, `kr`,
+`jp`, `br`, `lan`, `las`, `oce`, `tr`, `ru`.
 
 ## Déploiement sur Vercel
 
@@ -83,26 +96,25 @@ npm i -g vercel   # si besoin
 vercel deploy
 ```
 
-Puis dans les **Settings > Environment Variables** du projet Vercel,
-ajouter :
-
-- `RIOT_API_KEY` = votre clé Riot (dev/personal/product selon le stade du
-  projet).
-
-Sans cette variable, l'app déployée bascule automatiquement en mode démo.
+Aucune variable d'environnement obligatoire. `OPGG_MOCK=1` peut être
+ajoutée dans **Settings > Environment Variables** si tu veux forcer le
+mode démo sur un environnement de preview.
 
 ## Limites connues du MVP
 
-- **Pas de base de données** : le Riot ID est saisi à chaque visite, pas de
-  compte utilisateur. La structure (route API isolée, pas d'état côté
+- **Pas de base de données** : le Riot ID est saisi à chaque visite, pas
+  de compte utilisateur. La structure (route API isolée, pas d'état côté
   client persistant) permet d'ajouter facilement des comptes plus tard
   (Postgres via Vercel Postgres/Neon, ou Supabase).
-- **Cache en mémoire** (`lib/riot.js`, fonctions `cacheGet`/`cacheSet`) pour
-  rester sous les rate-limits Riot (clé dev : 20 req/s, 100 req/2min). Ce
-  cache est perdu à chaque cold start Vercel et n'est pas partagé entre
-  instances — pour une prod multi-clients, le remplacer par
-  [Upstash Redis](https://upstash.com/) (tier gratuit) : le remplacement
-  est isolé à ces deux fonctions.
+- **Cache en mémoire** (`lib/opgg.js`, fonctions `cacheGet`/`cacheSet`)
+  pour limiter la fréquence des requêtes vers op.gg. Ce cache est perdu à
+  chaque cold start Vercel et n'est pas partagé entre instances — pour une
+  prod multi-clients, le remplacer par [Upstash Redis](https://upstash.com/)
+  (tier gratuit) : le remplacement est isolé à ces deux fonctions.
+- **Fragilité intrinsèque au scraping** : voir la section "Points
+  d'attention" ci-dessus. Si tu commercialises ce produit, prévoir une
+  solution de repli (service de scraping tiers géré, ou retour à l'API
+  Riot officielle) en cas de blocage prolongé par op.gg.
 
 ## Build
 
