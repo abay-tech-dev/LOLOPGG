@@ -5,7 +5,7 @@
 // ici, côté serveur (pas de clé API, pas de compte développeur Riot).
 
 import { NextResponse } from 'next/server';
-import { getPlayerStats, getMockPlayerStats, OpggError } from '@/lib/opgg';
+import { getPlayerStats, getMockPlayerStats, debugFetchRaw, OpggError } from '@/lib/opgg';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +14,7 @@ export async function GET(request) {
   const riotId = searchParams.get('riotId');
   const platform = searchParams.get('platform') || 'euw';
   const forceMock = searchParams.get('mock') === '1';
+  const debug = searchParams.get('debug') === '1';
 
   if (!riotId) {
     return NextResponse.json({ error: 'Paramètre riotId manquant.' }, { status: 400 });
@@ -23,6 +24,22 @@ export async function GET(request) {
       { error: 'Format de Riot ID invalide. Utilisez Pseudo#TAG.' },
       { status: 400 }
     );
+  }
+
+  // Mode diagnostic temporaire : renvoie les payloads bruts d'OP.GG sans
+  // extraction, pour vérifier la structure réelle des données. À retirer
+  // une fois l'intégration stabilisée (voir lib/opgg.js, debugFetchRaw).
+  if (debug) {
+    try {
+      const raw = await debugFetchRaw(riotId, platform);
+      return NextResponse.json(raw);
+    } catch (err) {
+      if (err instanceof OpggError) {
+        return NextResponse.json({ error: err.message }, { status: err.status || 502 });
+      }
+      console.error('[api/stats debug] erreur inattendue :', err);
+      return NextResponse.json({ error: 'Erreur interne du serveur.' }, { status: 500 });
+    }
   }
 
   // Mode démo forcé via ?mock=1 (présentation du produit) ou via la
