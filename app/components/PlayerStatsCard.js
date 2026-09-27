@@ -56,6 +56,25 @@ export default function PlayerStatsCard({ stats, compact = false }) {
         </div>
       </div>
 
+      {rank && (rank.wins > 0 || rank.losses > 0) && (
+        <div className="stats-row">
+          <div className="stat-block">
+            <span className="stat-label">Victoires classées</span>
+            <span className="stat-value win">{rank.wins}V</span>
+          </div>
+          <div className="stat-block">
+            <span className="stat-label">Défaites classées</span>
+            <span className="stat-value loss">{rank.losses}D</span>
+          </div>
+          <div className="stat-block">
+            <span className="stat-label">Winrate</span>
+            <span className="stat-value">
+              {Math.round((rank.wins / (rank.wins + rank.losses)) * 100)}%
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="stats-row">
         <div className="stat-block">
           <span className="stat-label">Victoires du jour</span>
