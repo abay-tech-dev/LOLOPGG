@@ -52,12 +52,14 @@ et sans inscription — pas l'API de jeu Riot dont on s'écarte ici.
   côté op.gg pour cet endpoint : le calcul victoires/défaites du jour se
   fait en filtrant les 20 dernières games récupérées. Un streamer qui joue
   plus de 20 games dans sa journée verra un compteur sous-évalué.
-- **Non testé en conditions réelles** depuis l'environnement où ce code a
-  été écrit (accès sortant vers op.gg bloqué par la politique réseau du
-  sandbox de développement). À tester en local avant tout déploiement —
-  si les champs ne correspondent pas exactement, ajuste les fonctions
-  `extract*` de `lib/opgg.js` (elles lisent déjà plusieurs noms de champs
-  possibles par précaution, mais la structure réelle peut différer).
+- **Structure JSON validée sur un vrai compte** (voir `?debug=1` ci-dessous)
+  début 2026 : la recherche par Riot ID renvoie directement les infos de
+  rang (`solo_tier_info`), et l'historique de games liste les 10
+  participants de chaque partie (il faut retrouver le sien par
+  `summoner_id`). Si op.gg change cette structure plus tard, le
+  diagnostic `?debug=1` (voir `lib/opgg.js`, `debugFetchRaw`) permet de
+  voir la nouvelle forme et d'ajuster les fonctions `extract*` en
+  conséquence.
 
 ## Mode démo (sans dépendre d'op.gg)
 

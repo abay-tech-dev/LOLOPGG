@@ -45,7 +45,8 @@ export default function PlayerStatsCard({ stats, compact = false }) {
           {rank ? (
             <>
               <div className={`rank-tier rank-${rank.tier}`}>
-                {rank.tier} {rank.rank}
+                {rank.tier}
+                {rank.rank ? ` ${rank.rank}` : ''}
               </div>
               <div className="rank-lp">{rank.leaguePoints} LP</div>
             </>
