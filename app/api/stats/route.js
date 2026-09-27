@@ -5,7 +5,13 @@
 // ici, côté serveur (pas de clé API, pas de compte développeur Riot).
 
 import { NextResponse } from 'next/server';
-import { getPlayerStats, getMockPlayerStats, debugFetchRaw, OpggError } from '@/lib/opgg';
+import {
+  getPlayerStats,
+  getMockPlayerStats,
+  debugFetchRaw,
+  debugProbeSummaryEndpoints,
+  OpggError,
+} from '@/lib/opgg';
 
 export const runtime = 'nodejs';
 
@@ -14,7 +20,7 @@ export async function GET(request) {
   const riotId = searchParams.get('riotId');
   const platform = searchParams.get('platform') || 'euw';
   const forceMock = searchParams.get('mock') === '1';
-  const debug = searchParams.get('debug') === '1';
+  const debug = searchParams.get('debug');
 
   if (!riotId) {
     return NextResponse.json({ error: 'Paramètre riotId manquant.' }, { status: 400 });
@@ -28,10 +34,11 @@ export async function GET(request) {
 
   // Mode diagnostic temporaire : renvoie les payloads bruts d'OP.GG sans
   // extraction, pour vérifier la structure réelle des données. À retirer
-  // une fois l'intégration stabilisée (voir lib/opgg.js, debugFetchRaw).
-  if (debug) {
+  // une fois l'intégration stabilisée (voir lib/opgg.js).
+  if (debug === '1' || debug === '2') {
     try {
-      const raw = await debugFetchRaw(riotId, platform);
+      const raw =
+        debug === '1' ? await debugFetchRaw(riotId, platform) : await debugProbeSummaryEndpoints(riotId, platform);
       return NextResponse.json(raw);
     } catch (err) {
       if (err instanceof OpggError) {
