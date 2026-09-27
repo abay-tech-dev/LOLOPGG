@@ -76,14 +76,18 @@ export default function PlayerStatsCard({ stats, compact = false }) {
       )}
 
       <div className="stats-row">
-        <div className="stat-block">
-          <span className="stat-label">Victoires du jour</span>
-          <span className="stat-value win">{today.wins}V</span>
-        </div>
-        <div className="stat-block">
-          <span className="stat-label">Défaites du jour</span>
-          <span className="stat-value loss">{today.losses}D</span>
-        </div>
+        {!compact && (
+          <>
+            <div className="stat-block">
+              <span className="stat-label">Victoires du jour</span>
+              <span className="stat-value win">{today.wins}V</span>
+            </div>
+            <div className="stat-block">
+              <span className="stat-label">Défaites du jour</span>
+              <span className="stat-value loss">{today.losses}D</span>
+            </div>
+          </>
+        )}
         <div className="stat-block">
           <span className="stat-label">Série en cours</span>
           <span className={`stat-value ${streak ? (streak.win ? 'win' : 'loss') : ''}`}>
